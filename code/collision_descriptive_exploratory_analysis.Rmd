@@ -1,0 +1,317 @@
+---
+title: "An exploratory analysis of road traffic collisions pre- and post-20mph speed limit expansions in Edinburgh and Glasgow"
+author: Torran Semple (torran.semple@eng.ox.ac.uk)
+date: 31/01/2026
+output: html_document
+---
+
+<br>
+
+## Notebook description:
+This notebook contains a exploratory analysis of road traffic collisions in Edinburgh and Glasgow from 2010-2022. Traffic trends are also explored to account for exposure (i.e., collisions corrected for traffic flow)
+
+<br>
+
+## Data sources:
+The road traffic collisions (RTC) data used in this notebook were derived from the UK Gov.'s STATS19 database (see: https://www.data.gov.uk/dataset/cb7ae6f0-4be6-4935-9277-47e5ce24a11f/road-accidents-safety-data); traffic data were downloaded from the UK Gov.'s traffic statistics (see: https://roadtraffic.dft.gov.uk/downloads) 
+
+<br>
+
+## Overview of contents
+1. Reproducibility / load required packages
+<br>
+2. Load and view Edinburgh and Glasgow summary stats (ED_GLA) and the equivalent summary data for single-vehicle, low-speed (20/30mph) collisions (ED_GLA_SV_LS)
+<br>
+3. Annual Average Daily Flow (AADF) traffic plots 
+<br>
+4. Collision (RTC) frequency plots
+<br>
+5. Killed or Seriously Injured (KSI) plots
+<br>
+6. Collision (RTC) rate and KSI rate plots
+
+<br>
+<br>
+<br>
+
+
+## 1. Reproducibility / load required packages
+```{r setup}
+
+# Install required packages if necessary
+if(!require(ggplot2)) install.packages("ggplot2")
+if(!require(cowplot)) install.packages("cowplot")
+
+# Load required packages
+library(ggplot2) # For visualisation
+library(cowplot) # For arranging visualisations
+
+<<<<<<< HEAD
+# See 'session_info.txt' in main repository () for package versions/dependencies
+=======
+# See 'session_info.txt' in main repository (20mph_collisions_exploratory_analysis/code) for package versions/dependencies
+>>>>>>> 7867996 (Update Rmd file with session info instructions)
+
+```
+
+
+## 2. Load and view Edinburgh and Glasgow summary stats (ED_GLA) and the equivalent summary data for single-vehicle, low-speed (20/30mph) collisions (ED_GLA_SV_LS)
+```{r}
+
+# Load combined Edinburgh & Glasgow summary stats for collisions and traffic
+ED_GLA <- read.csv("https://raw.githubusercontent.com/torransemple/20mph_collisions_exploratory_analysis/refs/heads/main/data/ED_GLA_collisions_traffic_summary.csv", header = TRUE, sep = ",")
+
+# Load combined single-vehicle, low-speed summary stats in Edinburgh & Glasgow (note: traffic statistics are not directly comparable with this subset)
+ED_GLA_SV_LS <- read.csv("https://raw.githubusercontent.com/torransemple/20mph_collisions_exploratory_analysis/refs/heads/main/data/ED_GLA_SV_LS_collisions_traffic_summary.csv", header = TRUE, sep = ",")
+
+# View/check structure of ED_GLA
+str(ED_GLA)
+
+# Notes on ED_GLA variables
+# 'year' = year between 2010 and 2022 (i.e., the study period)
+# 'number_collisions' = absolute number of collisions per year
+# 'ksi_prop' = % of collisions resulting in killed or seriously injured (KSI) outcomes per year
+# 'ksi_count' = number of KSIs per year
+# 'fatal_prop' = % of collisions resulting in fatal outcomes per year
+# 'fatal_count' = number of fatalities per year
+# 'annual_avg' = average AADF (traffic) per year
+# 'cycle_avg_year' = cycles AADF
+# 'bus_avg_year' = buses AADF
+# 'car_avg_year' = cars AADF
+# 'city' = Edinburgh or Glasgow
+# 'annual_aadf' = annual AADF (i.e., 'annual_avg' * 365) 
+# 'ksi_annual_rate' = KSI rate/exposure, i.e., number of KSIs divided by annual AADF per 100,000 vehicles
+# 'collision_annual_rate' = collision rate/exposure, i.e., number of collisions divided by annual AADF per 100,000 vehicles
+
+# Note: ED_GLA_SV_LS has less variables given that the subset is not compatible with the traffic data, which refer to the entire transport network per city
+
+```
+
+
+## 3. Annual Average Daily Flow (AADF) traffic plots 
+```{r, warning=FALSE}
+
+# This chunk contains AADF plots using the ED_GLA data to show how traffic varied across the study period for all modes, and for cycles, buses and cars separately
+
+
+# AADF: All modes (a1)
+a1 <- ggplot(ED_GLA, aes(x = year, y = annual_avg)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") + 
+  geom_point(color = "black", size = 2, shape = 16) +
+  labs(x="Year", y="AADF", color="City") +
+  ggtitle("AADF: All Modes") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16), 
+                            axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 30000, 3000), limits=c(0, 30000)) + 
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# AADF: Cars (a2)
+a2 <- ggplot(ED_GLA, aes(x = year, y = car_avg_year)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") + 
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="AADF", color="City") + 
+  ggtitle("AADF: Cars") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16), 
+                            axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 25000, 2500), limits=c(0, 25000)) + 
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# AADF: Buses (a3)  
+a3 <- ggplot(ED_GLA, aes(x = year, y = bus_avg_year)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") + 
+  geom_point(color = "black", size = 2, shape = 16) +
+  labs(x="Year", y="AADF", color="City") + 
+  ggtitle("AADF: Buses") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16), 
+                            axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 600, 75), limits=c(0, 600)) + 
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# AADF: Cycles (a4)
+a4 <- ggplot(ED_GLA, aes(x = year, y = cycle_avg_year)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") + 
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="AADF", color="City") +
+  ggtitle("AADF: Cycles") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16), 
+                            axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 200, 20), limits=c(0, 200)) + 
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# Grid the AADF plots
+grid_AADF <- plot_grid(a1,a2,a3,a4, nrow = 2, align = "g")
+grid_AADF
+
+
+```
+
+
+## 4. Collision (RTC) frequency plots
+```{r, warning=FALSE}
+
+# This chunk contains collision frequency plots for all collisions (ED_GLA) and the single-vehicle, low-speed collisions (ED_GLA_SV_LS) subset
+
+
+# Collision frequency (all collisions - ED_GLA) (f1)
+f1 <- ggplot(ED_GLA, aes(x = year, y = number_collisions)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") + 
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="Frequency", color="City") + 
+  ggtitle("RTC frequency: all collisions") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16),
+        plot.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 1400, 100), limits=c(0, 1400)) +
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# Collision frequency (single-vehicle, low-speed collisions - ED_GLA_SV_LS) (f2)
+f2 <- ggplot(ED_GLA_SV_LS, aes(x = year, y = number_collisions)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") +
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="Frequency", color="City") + 
+  ggtitle("RTC frequency: single-vehicle, low-speed collisions") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16),
+        plot.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 500, 50), limits=c(0, 500)) +
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+# note: these plots are combined to form a grid with collision and KSI rate plots in chunk 6
+
+
+```
+
+
+## 5. Killed or Seriously Injured (KSI) plots
+```{r, warning=FALSE}
+
+# This chunk contains KSI plots for all collisions (ED_GLA) and the single-vehicle, low-speed collisions (ED_GLA_SV_LS) subset
+
+
+# Frequency of KSIs (all collisions - ED_GLA) (k1)
+k1 <- ggplot(ED_GLA, aes(x = year, y = ksi_count)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") + 
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="Frequency", color="City") + 
+  ggtitle("KSI frequency: all collisions") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16),
+        plot.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 250, 25), limits=c(0, 250)) + 
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# % of collisions resulting in KSI outcomes (ED_GLA) (k2)
+k2 <- ggplot(ED_GLA, aes(x = year, y = ksi_prop)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") + 
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="KSI % of RTCs", color="City") + 
+  ggtitle("Proportion of KSIs: all collisions") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16),
+        plot.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 40, 5), limits=c(0, 40)) + 
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+ 
+
+
+# Frequency of KSIs (single-vehicle, low-speed collisions - ED_GLA_SV_LS) (k3)
+k3 <- ggplot(ED_GLA_SV_LS, aes(x = year, y = ksi_count)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") + 
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="Frequency", color="City") + 
+  ggtitle("KSI frequency: single-vehicle, low-speed collisions") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16),
+        plot.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 150, 15), limits=c(0, 150)) +
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# % of single-vehicle, low-speed collisions resulting in KSI outcomes (ED_GLA_SV_LS) (k4)
+k4 <- ggplot(ED_GLA_SV_LS, aes(x = year, y = ksi_prop)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") + 
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="KSI % of RTCs", color="City") + 
+  ggtitle("Proportion of KSIs: single-vehicle, low-speed collisions") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16),
+        plot.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 50, 5), limits=c(0, 50)) +
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# Grid for KSI plots
+grid_KSI <- plot_grid(k1,k2,k3,k4,
+                        nrow = 2, 
+                        align = "hv", 
+                        axis = "tblr")
+grid_KSI
+
+ggsave(filename = "20mph_ksi_grid.png", plot = grid_KSI, width = 15, height = 10, units = "in", dpi = 300)
+                        
+
+```
+
+
+## 6. Collision (RTC) rate and KSI rate plots
+```{r, warning=FALSE}
+
+# This chunk contains collision rate and KSI rate plots for all collisions (ED_GLA); note: the equivalent cannot be produced for ED_GLA_SV_LS as these collisions are not directly comparable to traffic data
+
+
+# Collision rate (r1)
+r1 <- ggplot(ED_GLA, aes(x = year, y = collisions_annual_rate)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") +
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="RTC frequency/annual AADF", color="City") + 
+  ggtitle("RTC rate per 100,000 vehicles") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16),
+        plot.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 18, 2), limits=c(0, 18)) + 
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# KSI rate (r2)
+r2 <- ggplot(ED_GLA, aes(x = year, y = ksi_annual_rate)) + 
+  geom_line(aes(color = city, group = city), size = 0.5, linetype = "solid") +
+  geom_point(color = "black", size = 2, shape = 16) + 
+  labs(x="Year", y="KSI frequency/annual AADF", color="City") + 
+  ggtitle("KSI rate per 100,000 vehicles") + 
+  theme_bw() +
+  theme(text = element_text(family="Arial", size = 16),
+        plot.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(angle=45, hjust=1)) + 
+  scale_y_continuous(breaks= seq(0, 3, 0.3), limits=c(0, 3)) + 
+  scale_x_continuous(breaks = seq(2010, 2022, by = 1))
+
+
+# Grid for collision frequencies (f1 and f2) collision rate (r1) and KSI rate (r2)
+grid_rates <- plot_grid(f1, f2, r1, r2, 
+                        nrow = 2, 
+                        align = "hv", 
+                        axis = "tblr")
+grid_rates
+
+ggsave(filename = "20mph_rtc_ksi_grid.png", plot = grid_rates, width = 15, height = 10, units = "in", dpi = 300)
+
+
+```
+
